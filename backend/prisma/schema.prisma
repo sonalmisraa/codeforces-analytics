@@ -1,0 +1,156 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  clerkId           String    @unique
+  email             String    @unique
+  username          String?   @unique
+  name              String?
+  avatar            String?
+  college           String?
+  branch            String?
+  country           String?
+  githubUrl         String?
+  linkedinUrl       String?
+  resumeUrl         String?
+  bio               String?
+  favoriteLanguages String[]
+  codeforcesHandle  String?   @unique
+  leetcodeUsername  String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  profile           Profile?
+  contestHistory    ContestHistory[]
+  dailyActivity     DailyActivity[]
+  problemStats      ProblemStats[]
+  weeklyProgress    WeeklyProgress[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  codeforcesRating     Int?
+  codeforcesMaxRating  Int?
+  codeforcesRank       String?
+  codeforcesMaxRank    String?
+  codeforcesContests   Int?
+  codeforcesSolved     Int?
+  leetcodeTotalSolved  Int?
+  leetcodeEasySolved   Int?
+  leetcodeMediumSolved Int?
+  leetcodeHardSolved   Int?
+  leetcodeAcceptRate   Float?
+  currentStreak        Int      @default(0)
+  longestStreak        Int      @default(0)
+  totalSolved          Int      @default(0)
+  lastSyncedAt         DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model ContestHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  contestId     Int
+  contestName   String
+  platform      Platform @default(CODEFORCES)
+  rank          Int?
+  oldRating     Int?
+  newRating     Int?
+  ratingChange  Int?
+  problemsSolved Int?
+  contestDate   DateTime
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId, platform])
+  @@map("contest_history")
+}
+
+model DailyActivity {
+  id            String   @id @default(cuid())
+  userId        String
+  date          DateTime @db.Date
+  problemsSolved Int     @default(0)
+  minutesCoded  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_activity")
+}
+
+model ProblemStats {
+  id        String      @id @default(cuid())
+  userId    String
+  topic     ProblemTopic
+  solved    Int         @default(0)
+  attempted Int         @default(0)
+  platform  Platform
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic, platform])
+  @@map("problem_stats")
+}
+
+model WeeklyProgress {
+  id             String   @id @default(cuid())
+  userId         String
+  weekStart      DateTime @db.Date
+  problemsSolved Int      @default(0)
+  hoursCoded     Float    @default(0)
+  contestsGiven  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@map("weekly_progress")
+}
+
+enum Platform {
+  CODEFORCES
+  LEETCODE
+  CODECHEF
+  ATCODER
+}
+
+enum ProblemTopic {
+  GREEDY
+  DP
+  GRAPHS
+  TREES
+  BINARY_SEARCH
+  MATH
+  IMPLEMENTATION
+  STRINGS
+  DATA_STRUCTURES
+  NUMBER_THEORY
+  GEOMETRY
+  SORTING
+}
